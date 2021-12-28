@@ -1,36 +1,41 @@
 package com.orioninc.models;
 
-import java.util.Objects;
+import lombok.Getter;
 
+import java.util.*;
+
+@Getter
 public class BookShelf {
-    private Integer capacity;
-    private Integer currentCount;
+    private final int capacity;
+    private List<Book> books;
 
-    public BookShelf(Integer capacity) {
+    public BookShelf(int capacity) {
         this.capacity = capacity;
-        this.currentCount = capacity;
+        books = Collections.synchronizedList(new ArrayList<>());
+
+        for (int i = 1; i <= capacity; i++) {
+            books.add(Book.builder().title("Book№" + i).author("Author№" + i).build());
+        }
     }
 
-    public Integer getCurrentCount() {
-        return currentCount;
-    }
-
-    public synchronized Integer takeBook() throws InterruptedException {
-
-        while(currentCount == 0) wait();
-
+    public Book takeBook() throws InterruptedException {
+        while (books.size() == 0) {
+            wait();
+        }
         notify();
-        currentCount--;
 
-        return currentCount;
+        Book book = books.get(new Random().nextInt(books.size()));
+        books.remove(book);
+
+        return book;
     }
 
-    public synchronized Integer putBook() throws InterruptedException {
-        while(Objects.equals(currentCount, capacity)) wait();
-
+    public void putBook(Book book) throws InterruptedException {
+        while (books.size() == capacity) {
+            wait();
+        }
         notify();
-        currentCount++;
 
-        return currentCount;
+        books.add(book);
     }
 }
